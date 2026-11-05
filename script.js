@@ -64,7 +64,14 @@ function render(){
   for(let i=0;i<7&&!(data[nextDay]||[]).length;i++)nextDay=(nextDay+1)%7;
   const nextLessons=data[nextDay]||[],nextBells=getBells(nextLessons.length),[h,m]=nextBells[0][0].split(":").map(Number);
   targetAt=new Date(midnight);do{targetAt.setDate(targetAt.getDate()+1);}while(targetAt.getDay()!==nextDay);targetAt.setHours(h,m,0,0);
-  detail="Следующий учебныйный день: "+labels[nextDay];
+  detail="Следующий учебный день: "+labels[nextDay];
+ }
+ if(!targetAt&&!arr.length){
+  let nextDay=(nowDate.getDay()+1)%7;
+  for(let i=0;i<7&&!(data[nextDay]||[]).length;i++)nextDay=(nextDay+1)%7;
+  const nextBells=getBells((data[nextDay]||[]).length),[h,m]=nextBells[0][0].split(":").map(Number);
+  targetAt=new Date(midnight);do{targetAt.setDate(targetAt.getDate()+1);}while(targetAt.getDay()!==nextDay);targetAt.setHours(h,m,0,0);
+  detail="Следующий учебный день: "+labels[nextDay];
  }
  $("status").textContent=state;$("subject").textContent=title;$("detail").textContent=detail;$("timer").dataset.target=targetAt?String(targetAt.getTime()):"";
  $("lessons").innerHTML=arr.map((subject,index)=>{const meta=lessonMeta[day+"-"+index]||{};const info=[meta.room?"Кабинет "+meta.room:"Кабинет не указан",meta.teacher,meta.description].filter(Boolean).join(" · ");return '<div class="lesson '+(current===index?"current":"")+'"><span class="num">'+(index+1)+'</span><div class="lesson-info"><div class="name">'+escapeHtml(subject)+'</div><div class="room">'+escapeHtml(info)+'</div></div><span class="time">'+bells[index][0]+'–'+bells[index][1]+'</span><button class="lesson-edit" type="button" data-edit="'+index+'" aria-label="Редактировать урок '+(index+1)+'" title="Редактировать урок">✎</button></div>';}).join("")||'<p class="muted">Выходной день</p>';
