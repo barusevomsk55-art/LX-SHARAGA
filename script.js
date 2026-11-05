@@ -54,18 +54,28 @@ function render(){
  const now=nowDate.getHours()*60+nowDate.getMinutes()+nowDate.getSeconds()/60;
  let current=-1,next=-1;
  arr.forEach((_,index)=>{const start=toMinutes(bells[index][0]),end=toMinutes(bells[index][1]);if(now>=start&&now<end)current=index;if(now<start&&next<0)next=index;});
- let state="Учебный день окончен",title="До завтра",target=0,detail="";
+ let state="Учебный день окончен",title="До завтра",targetAt=null,detail="";
+ const midnight=new Date(nowDate);midnight.setHours(0,0,0,0);
  if(!arr.length){state="Сегодня выходной";title="Отдых";}
- else if(current>=0){state="Сейчас идёт урок";title=arr[current];target=toMinutes(bells[current][1]);detail="Урок "+(current+1)+" · до конца "+bells[current][1];}
- else if(next>=0){state=now<toMinutes(bells[0][0])?"До начала первого урока":"Сейчас перемена";title=now<toMinutes(bells[0][0])?arr[0]:"Перемена";target=toMinutes(bells[next][0]);detail="Следующий урок: "+arr[next]+" · начало "+bells[next][0];}
- $("status").textContent=state;$("subject").textContent=title;$("detail").textContent=detail;$("timer").dataset.target=target;
+ else if(current>=0){state="Сейчас идёт урок";title=arr[current];const [h,m]=bells[current][1].split(":").map(Number);targetAt=new Date(midnight);targetAt.setHours(h,m,0,0);detail="Урок "+(current+1)+" · до конца "+bells[current][1];}
+ else if(next>=0){state=now<toMinutes(bells[0][0])?"До начала первого урока":"Сейчас перемена";title=now<toMinutes(bells[0][0])?arr[0]:"Перемена";const [h,m]=bells[next][0].split(":").map(Number);targetAt=new Date(midnight);targetAt.setHours(h,m,0,0);detail="Следующий урок: "+arr[next]+" · начало "+bells[next][0];}
+ else {
+  let nextDay=(nowDate.getDay()+1)%7;
+  for(let i=0;i<7&&!(data[nextDay]||[]).length;i++)nextDay=(nextDay+1)%7;
+  const nextLessons=data[nextDay]||[],nextBells=getBells(nextLessons.length),[h,m]=nextBells[0][0].split(":").map(Number);
+  targetAt=new Date(midnight);do{targetAt.setDate(targetAt.getDate()+1);}while(targetAt.getDay()!==nextDay);targetAt.setHours(h,m,0,0);
+  detail="Следующий учебныйный день: "+labels[nextDay];
+ }
+ $("status").textContent=state;$("subject").textContent=title;$("detail").textContent=detail;$("timer").dataset.target=targetAt?String(targetAt.getTime()):"";
  $("lessons").innerHTML=arr.map((subject,index)=>{const meta=lessonMeta[day+"-"+index]||{};const info=[meta.room?"Кабинет "+meta.room:"Кабинет не указан",meta.teacher,meta.description].filter(Boolean).join(" · ");return '<div class="lesson '+(current===index?"current":"")+'"><span class="num">'+(index+1)+'</span><div class="lesson-info"><div class="name">'+escapeHtml(subject)+'</div><div class="room">'+escapeHtml(info)+'</div></div><span class="time">'+bells[index][0]+'–'+bells[index][1]+'</span><button class="lesson-edit" type="button" data-edit="'+index+'" aria-label="Редактировать урок '+(index+1)+'" title="Редактировать урок">✎</button></div>';}).join("")||'<p class="muted">Выходной день</p>';
  $("lessons").querySelectorAll("[data-edit]").forEach(button=>button.onclick=()=>openLessonEditor(day,Number(button.dataset.edit)));
 }
 function tick(){
- const d=new Date(),target=Number($("timer").dataset.target||0),now=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
- const seconds=Math.max(0,Math.floor((target-now)*60));$("timer").textContent=fmt(Math.floor(seconds/3600))+":"+fmt(Math.floor(seconds%3600/60))+":"+fmt(seconds%60);
- if(d.getSeconds()===0)render();
+ const target=Number($("timer").dataset.target||0);
+ const seconds=target?Math.max(0,Math.floor((target-Date.now())/1000)):0;
+ $("timer").textContent=fmt(Math.floor(seconds/3600))+":"+fmt(Math.floor(seconds%3600/60))+":"+fmt(seconds%60);
+ const d=new Date();if(d.getSeconds()===0)render();
+
 }
 $("settings").onclick=openSettings;
 render();tick();if(apiToken())syncPull().catch(()=>{});setInterval(tick,1000);
