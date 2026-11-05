@@ -88,6 +88,12 @@ async function handle(request, env) {
       await env.DB.prepare("INSERT INTO pair_codes(code,user_id,purpose,expires_at) VALUES(?,?,?,?)").bind(value,account.id,"device",expires).run();
       return json({code:value,expiresAt:expires});
     }
+    if(path==="/api/telegram/setup" && request.method==="POST") {
+      if(!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_WEBHOOK_SECRET) return json({error:"Telegram secrets are not configured"},500);
+      const webhookUrl=new URL("/telegram/webhook",url.origin).toString();
+      const result=await telegram(env,"setWebhook",{url:webhookUrl,secret_token:env.TELEGRAM_WEBHOOK_SECRET,allowed_updates:["message"],drop_pending_updates:false});
+      return json({ok:true,webhookUrl,result:result.result});
+    }
     if(path==="/api/telegram/link" && request.method==="POST") {
       const value=code(),expires=Date.now()+10*60*1000;
       await env.DB.prepare("DELETE FROM pair_codes WHERE user_id=? AND purpose='telegram'").bind(account.id).run();
