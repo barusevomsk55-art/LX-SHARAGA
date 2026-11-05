@@ -1,0 +1,14 @@
+name = "lx-sharaga-api"
+main = "worker.js"
+compatibility_date = "2026-11-05"
+
+[vars]
+TELEGRAM_BOT_USERNAME = "PUT_YOUR_BOT_USERNAME_HERE"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lx-sharaga"
+database_id = "CREATE_D1_DATABASE_AND_PASTE_ID_HERE"
+
+[triggers]
+crons = ["* * * * *"]
