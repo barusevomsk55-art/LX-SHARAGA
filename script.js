@@ -10,3 +10,23 @@ function tick(){let d=new Date(),target=+$("timer").dataset.target,now=d.getHour
 $("edit").onclick=()=>{let day=selected,arr=data[day].slice();for(let i=0;i<arr.length;i++){let v=prompt("Урок "+(i+1)+" — предмет",arr[i]);if(v===null)return;arr[i]=v.trim()||arr[i]}data[day]=arr;localStorage.setItem("lx_schedule",JSON.stringify(data));render()};
 $("export").onclick=()=>{let events=[];for(let day=1;day<=5;day++){let dt=new Date(2026,10,9+(day-1));(data[day]||[]).forEach((s,i)=>{let date=new Date(dt);let [h,m]=bells[i][0].split(":").map(Number);date.setHours(h,m,0);let end=new Date(dt);[h,m]=bells[i][1].split(":").map(Number);end.setHours(h,m,0);let stamp=x=>x.getFullYear()+fmt(x.getMonth()+1)+fmt(x.getDate())+"T"+fmt(x.getHours())+fmt(x.getMinutes())+"00";events.push("BEGIN:VEVENT\r\nUID:lx-"+day+"-"+i+"@lx-sharaga\r\nDTSTAMP:"+stamp(new Date())+"\r\nDTSTART:"+stamp(date)+"\r\nDTEND:"+stamp(end)+"\r\nSUMMARY:"+s+"\r\nDESCRIPTION:Урок "+(i+1)+"\r\nEND:VEVENT")})}let blob=new Blob(["BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//LX SHARAGA//RU\r\n"+events.join("\r\n")+"\r\nEND:VCALENDAR"],{type:"text/calendar"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="LX-SHARAGA.ics";a.click();URL.revokeObjectURL(a.href)};
 render();tick();setInterval(tick,1000);
+const lessonMeta=JSON.parse(localStorage.getItem("lx_lesson_meta")||"{}");
+const lessonObserver=new MutationObserver(()=>{
+ document.querySelectorAll("#lessons .lesson").forEach((row,index)=>{
+  if(row.querySelector(".lesson-edit"))return;
+  const btn=document.createElement("button");btn.className="lesson-edit";btn.type="button";btn.textContent="✎";btn.title="Редактировать этот урок";btn.setAttribute("aria-label","Редактировать урок "+(index+1));
+  btn.onclick=()=>openLessonEditor(selected,index);row.appendChild(btn);
+  const meta=lessonMeta[selected+"-"+index];if(meta){const room=row.querySelector(".room");if(room)room.textContent=[meta.room?"Кабинет "+meta.room:"Кабинет не указан",meta.teacher,meta.description].filter(Boolean).join(" · ");}
+ });
+});
+lessonObserver.observe(document.getElementById("lessons"),{childList:true});
+function openLessonEditor(day,index){
+ const subject=data[day][index];if(subject===undefined)return;
+ const meta=lessonMeta[day+"-"+index]||{};let dialog=document.getElementById("lessonDialog");
+ if(!dialog){dialog=document.createElement("dialog");dialog.id="lessonDialog";dialog.className="lesson-dialog";document.body.appendChild(dialog);}
+ dialog.innerHTML='<form class="editor-form"><div class="editor-top"><div><div class="editor-kicker">РЕДАКТОР УРОКА</div><h3>Урок '+(index+1)+'</h3></div><button type="button" class="icon-close">×</button></div><label>Предмет<input name="subject" maxlength="70" required></label><label>Кабинет<input name="room" maxlength="30" placeholder="Например, 214"></label><label>Преподаватель<input name="teacher" maxlength="70" placeholder="ФИО преподавателя"></label><label>Описание<textarea name="description" rows="3" maxlength="300"></textarea></label><div class="editor-actions"><button type="button" class="cancel-btn">Отмена</button><button type="submit" class="save-btn">Сохранить</button></div></form>';
+ const f=dialog.querySelector("form");f.elements.subject.value=subject;f.elements.room.value=meta.room||"";f.elements.teacher.value=meta.teacher||"";f.elements.description.value=meta.description||"";
+ dialog.querySelector(".icon-close").onclick=()=>dialog.close();dialog.querySelector(".cancel-btn").onclick=()=>dialog.close();
+ f.onsubmit=e=>{e.preventDefault();const value=f.elements.subject.value.trim();if(!value)return;data[day][index]=value;lessonMeta[day+"-"+index]={room:f.elements.room.value.trim(),teacher:f.elements.teacher.value.trim(),description:f.elements.description.value.trim()};localStorage.setItem("lx_schedule",JSON.stringify(data));localStorage.setItem("lx_lesson_meta",JSON.stringify(lessonMeta));dialog.close();render();};
+ dialog.showModal();
+}
