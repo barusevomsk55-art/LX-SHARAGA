@@ -1,20 +1,23 @@
 # LX ШАРАГА
 
-Персональный сайт школьного расписания с адаптивным интерфейсом и поддержкой PWA.
+Первый опубликованный вариант сайта школьного расписания.
 
-## Полный проект
+## Сейчас в репозитории
+- `index.html`, `style.css`, `script.js` — адаптивный интерфейс.
+- Исходное расписание на будни: все 36 предметов.
+- Все 8 интервалов звонков.
+- Определение текущего урока/перемены и таймер.
+- Переключение дней недели.
+- Простое редактирование названий предметов с сохранением в localStorage.
+- Экспорт расписания в ICS.
+- Базовый PWA manifest и service worker.
 
-Полный исходный комплект Cloudflare Worker + D1 подготовлен отдельно. Он включает `public/` (сайт и PWA), `src/index.js` (API, Telegram webhook, Cron и ICS), миграцию D1, `wrangler.toml`, GitHub Actions и подробный README.
+## Опубликовать сайт через GitHub Pages
+1. Открой Settings → Pages.
+2. В разделе Build and deployment выбери Deploy from a branch.
+3. Branch: `main`, Folder: `/ (root)`.
+4. Нажми Save и дождись публикации.
+5. Сайт будет доступен по адресу `https://barusevomsk55-art.github.io/LX-SHARAGA/`.
 
-**Важно:** исходники ещё не загружены в этот репозиторий; этот README фиксирует проект и инструкции. Не запускайте публикацию, пока файлы проекта не добавлены.
-
-## Что потребуется для публикации
-
-1. Cloudflare аккаунт.
-2. Node.js LTS.
-3. Создать D1 базу `lx-sharaga-db` и вписать выданный `database_id` в `wrangler.toml`.
-4. Применить миграцию `npx wrangler d1 migrations apply lx-sharaga-db --remote`.
-5. Задать секреты Telegram через `npx wrangler secret put`.
-6. Выполнить `npm install` и `npm run deploy`.
-
-Никогда не помещайте Telegram Bot Token в HTML, JavaScript или GitHub.
+## Важно: что ещё не подключено
+Telegram-уведомления в фоне, облачная синхронизация между устройствами и динамическая ICS-подписка требуют серверной части. GitHub Pages её не запускает. Не вводи Telegram Bot Token в браузерный код. Для этих функций нужно отдельно развернуть Cloudflare Worker + D1 и задать секреты на стороне Cloudflare.
